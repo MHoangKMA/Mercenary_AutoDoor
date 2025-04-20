@@ -631,46 +631,48 @@ long readDistance(int triggerPin, int echoPin) {
  * @name: AutoModeDoor
  * -------------------
  * @brief: This function automatically controls the door based on the distance measured
- *         by two ultrasonic sensors. If a person is detected within a certain range, the
- *         door opens. If no one is detected, the door closes.
+ *         by two ultrasonic sensors. It activates a buzzer and updates an LCD display
+ *         depending on whether a person is detected or not.
  */
 void AutoModeDoor(void) {
-  long distance1 = readDistance(ULTRASONIC1_TRIGGER_PIN, ULTRASONIC1_ECHO_PIN); /* Read distance from Sensor 1 */
-  long distance2 = readDistance(ULTRASONIC2_TRIGGER_PIN, ULTRASONIC2_ECHO_PIN); /* Read distance from Sensor 2 */
+  long distance1 = readDistance(ULTRASONIC1_TRIGGER_PIN, ULTRASONIC1_ECHO_PIN);  /* Read distance from Sensor 1 */
+  long distance2 = readDistance(ULTRASONIC2_TRIGGER_PIN, ULTRASONIC2_ECHO_PIN);  /* Read distance from Sensor 2 */
 
-  Serial.print("Sensor 1: ");     /* Print label for Sensor 1 distance */
-  if (distance1 == -1)            /* Check if Sensor 1 is out of range */
-    Serial.print("Out of range"); /* Print out-of-range message for Sensor 1 */
+  Serial.print("Sensor 1: ");                   /* Print label for Sensor 1 distance */
+  if (distance1 == -1)                          /* Check if Sensor 1 is out of range */
+    Serial.print("Out of range");               /* Print out-of-range message for Sensor 1 */
   else
-    Serial.print(distance1); /* Print valid distance for Sensor 1 */
+    Serial.print(distance1);                    /* Print valid distance for Sensor 1 */
 
-  Serial.print(" cm | Sensor 2: "); /* Print separator and label for Sensor 2 */
-  if (distance2 == -1)              /* Check if Sensor 2 is out of range */
-    Serial.println("Out of range"); /* Print out-of-range message for Sensor 2 */
+  Serial.print(" cm | Sensor 2: ");             /* Print separator and label for Sensor 2 */
+  if (distance2 == -1)                          /* Check if Sensor 2 is out of range */
+    Serial.println("Out of range");             /* Print out-of-range message for Sensor 2 */
   else
-    Serial.println(distance2); /* Print valid distance for Sensor 2 */
+    Serial.println(distance2);                  /* Print valid distance for Sensor 2 */
 
   /* Check condition to open door: person detected */
   if ((distance1 > 0 && distance1 < 12) || (distance2 > 0 && distance2 < 12)) {
-    if (!isOpenDoor) { /* If the door is currently closed */
-      buzzerOn();      /* Activate buzzer */
-      OpenDoor();      /* Open the door */
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Open Door!"); /* Call function to open the door */
+    if (!isOpenDoor) {                          /* If the door is currently closed */
+      buzzerOn();                               /* Turn on the buzzer */
+      OpenDoor();                               /* Call function to open the door */
+      lcd.clear();                              /* Clear LCD display */
+      lcd.setCursor(0, 0);                      /* Set cursor to first row, first column */
+      lcd.print("Open Door!");                  /* Display message: Open Door! */
     }
   }
   /* Check condition to close door: no person detected */
   else {
-    if (isOpenDoor) { /* If the door is currently open */
-      buzzerOff();     /* Activate buzzer */
-      CloseDoor();    /* Open the door */
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Close Door!"); /* Call function to close the door */
+    if (isOpenDoor) {                           /* If the door is currently open */
+      buzzerOff();                              /* Turn off the buzzer */
+      CloseDoor();                              /* Call function to close the door */
+      lcd.clear();                              /* Clear LCD display */
+      lcd.setCursor(0, 0);                      /* Set cursor to first row, first column */
+      lcd.print("Close Door!");                 /* Display message: Close Door! */
     }
   }
 }
+
+
 
 
 
