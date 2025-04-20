@@ -27,7 +27,7 @@
 #define PASSWORD_FLAG 0xAA
 
 /* Define the pin connected to the servo */
-#define SERVO_PIN 18
+#define SERVO_PIN 19
 
 /* Define the PWM frequency used to control the servo (60 Hz) */
 #define PWM_FREQUENCY 60
