@@ -183,101 +183,99 @@ void LockByApp() {
  */
 
 void loop() {
-  LockByApp();                /* Check if a command is received from the app to lock/unlock the door */
-  char key = keypad.getKey(); /* Get the key pressed on the keypad */
+  // LockByApp();                /* Check if a command is received from the app to lock/unlock the door */
+  // char key = keypad.getKey(); /* Get the key pressed on the keypad */
 
-  /* If the "#" key is pressed */
-  if (key == '#') {
-    if (isPasswordStored()) /* Check if a password is already stored */
-    {
-      if (isOpenDoor) /* If the door is open */
-      {
-        lcd.clear();                        /* Clear the LCD screen */
-        lcd.setCursor(0, 0);                /* Set cursor to the first row, first column */
-        resetPassword();                    /* Reset the stored password */
-        lcd.print("RESET PASS");            /* Display the reset message */
-        SerialBT.print("PASSWORD RESETED"); /* Send a message to the app about password reset */
-        delay(2000);                        /* Wait for 2 seconds */
-        ESP.restart();                      /* Restart the ESP32 */
-      }
-    }
-  }
+  // /* If the "#" key is pressed */
+  // if (key == '#') {
+  //   if (isPasswordStored()) /* Check if a password is already stored */
+  //   {
+  //     if (isOpenDoor) /* If the door is open */
+  //     {
+  //       lcd.clear();                        /* Clear the LCD screen */
+  //       lcd.setCursor(0, 0);                /* Set cursor to the first row, first column */
+  //       resetPassword();                    /* Reset the stored password */
+  //       lcd.print("RESET PASS");            /* Display the reset message */
+  //       SerialBT.print("PASSWORD RESETED"); /* Send a message to the app about password reset */
+  //       delay(2000);                        /* Wait for 2 seconds */
+  //       ESP.restart();                      /* Restart the ESP32 */
+  //     }
+  //   }
+  // }
 
-  /* If the "*" key is pressed */
-  if (key == '*') {
-    if (isPasswordStored()) /* Check if a password is stored */
-    {
-      if (isOpenDoor) /* If the door is open */
-      {
-        lcd.clear();              /* Clear the LCD screen */
-        lcd.setCursor(0, 0);      /* Set cursor to the first row, first column */
-        CloseDoor();              /* Close the door */
-        lcd.print("Close Door");  /* Display the message */
-        delay(2000);              /* Wait for 2 seconds */
-        isOpenDoor = false;       /* Set the flag to false after closing the door */
-        lcd.clear();              /* Clear the LCD screen */
-        lcd.setCursor(0, 0);      /* Set cursor to the first row, first column */
-        lcd.print("Input Pass:"); /* Prompt the user to input the password */
-        checkPassword();          /* Verify the entered password */
-      }
-    }
-  }
+  // /* If the "*" key is pressed */
+  // if (key == '*') {
+  //   if (isPasswordStored()) /* Check if a password is stored */
+  //   {
+  //     if (isOpenDoor) /* If the door is open */
+  //     {
+  //       lcd.clear();              /* Clear the LCD screen */
+  //       lcd.setCursor(0, 0);      /* Set cursor to the first row, first column */
+  //       CloseDoor();              /* Close the door */
+  //       lcd.print("Close Door");  /* Display the message */
+  //       delay(2000);              /* Wait for 2 seconds */
+  //       isOpenDoor = false;       /* Set the flag to false after closing the door */
+  //       lcd.clear();              /* Clear the LCD screen */
+  //       lcd.setCursor(0, 0);      /* Set cursor to the first row, first column */
+  //       lcd.print("Input Pass:"); /* Prompt the user to input the password */
+  //       checkPassword();          /* Verify the entered password */
+  //     }
+  //   }
+  // }
 
-  /* If no password is stored yet, handle new password input */
-  if (!isPasswordStored()) {
-    handleNewPasswordInput(key); /* Handle the input for setting a new password */
-  }
+  // /* If no password is stored yet, handle new password input */
+  // if (!isPasswordStored()) {
+  //   handleNewPasswordInput(key); /* Handle the input for setting a new password */
+  // }
+  AutoModeDoor();
 }
 
 /*
  * @name: OpenDoor
  * ----------------------------
- * @brief: This function is used to open the door by rotating the servo motor. It also controls the status LEDs and sends a message to the Bluetooth app.
- * The servo motor is rotated from 0° to the defined ANGLE_SERVO_OPEN to fully open the door.
- * Additionally, it turns on the appropriate LED to indicate the door status and updates the Bluetooth app with a status message.
+ * @brief: This function opens the door using a servo motor.
+ *         It updates the LED status, sets a flag, rotates the servo to the open position,
+ *         and sends a message via Bluetooth to indicate the door is opened.
  */
 void OpenDoor() {
-  int angle;         /* Variable to store the servo motor angle */
-  isOpenDoor = true; /* Set the flag indicating the door is open */
+  int angle;                         /* Declare a variable to hold the current servo angle */
+  isOpenDoor = true;                 /* Set the flag to indicate that the door is open */
 
-  /* Turn off LED for closed door and turn on the LED for open door */
-  digitalWrite(ledPin1, LOW);
-  digitalWrite(ledPin2, LOW);
-  digitalWrite(ledPin3, HIGH);
+  digitalWrite(ledPin1, LOW);        /* Turn off LED1 (possibly idle indicator) */
+  digitalWrite(ledPin2, LOW);        /* Turn off LED2 (possibly closed indicator) */
+  digitalWrite(ledPin3, HIGH);       /* Turn on LED3 to indicate the door is open */
 
-  /* Rotate the servo motor from 0° to ANGLE_SERVO_OPEN */
-  for (angle = ANGLE_START; angle <= ANGLE_SERVO_OPEN; angle++) {
-    myServo.write(angle); /* Set the servo angle */
-    delay(5);             /* Delay to allow the servo to move smoothly */
+  for (angle = ANGLE_SERVO_CLOSE; angle >= ANGLE_START_END; angle--) {  /* Loop from close angle to open angle */
+    myServo.write(angle);           /* Rotate the servo to the specified angle */
+    delay(5);                       /* Delay to allow smooth servo movement */
   }
 
-  SerialBT.print("OPENED DOOR"); /* Send a message to the Bluetooth app to notify that the door is opened */
+  SerialBT.print("OPENED DOOR");     /* Send message via Bluetooth to indicate door is opened */
 }
 
 /*
  * @name: CloseDoor
  * ----------------------------
- * @brief: This function is used to close the door by rotating the servo motor. It also controls the status LEDs and sends a message to the Bluetooth app.
- * The servo motor is rotated from the defined ANGLE_SERVO_CLOSE to -45° to fully close the door.
- * Additionally, it updates the LED status to indicate the door is closed and sends a message to the Bluetooth app.
+ * @brief: This function closes the door using a servo motor.
+ *         It updates the LED status, resets the open flag, rotates the servo to the closed position,
+ *         and sends a message via Bluetooth to indicate the door is closed.
  */
 void CloseDoor() {
-  int angle;          /* Variable to store the servo motor angle */
-  isOpenDoor = false; /* Set the flag indicating the door is closed */
+  int angle;                          /* Declare a variable to hold the current servo angle */
+  isOpenDoor = false;                /* Set the flag to indicate that the door is closed */
 
-  /* Turn on LED for closed door and turn off other LEDs */
-  digitalWrite(ledPin2, HIGH);
-  digitalWrite(ledPin1, LOW);
-  digitalWrite(ledPin3, LOW);
+  digitalWrite(ledPin2, HIGH);       /* Turn on LED2 to indicate the door is closed */
+  digitalWrite(ledPin1, LOW);        /* Turn off LED1 (possibly idle indicator) */
+  digitalWrite(ledPin3, LOW);        /* Turn off LED3 (open indicator) */
 
-  /* Rotate the servo motor from ANGLE_SERVO_CLOSE to -45° */
-  for (angle = ANGLE_SERVO_CLOSE; angle >= ANGLE_START_END; angle--) {
-    myServo.write(angle); /* Set the servo angle */
-    delay(5);             /* Delay to allow the servo to move smoothly */
+  for (angle = ANGLE_START; angle <= ANGLE_SERVO_OPEN; angle++) {  /* Loop from open angle to close angle */
+    myServo.write(angle);           /* Rotate the servo to the specified angle */
+    delay(5);                       /* Delay to allow smooth servo movement */
   }
 
-  SerialBT.print("CLOSED DOOR"); /* Send a message to the Bluetooth app to notify that the door is closed */
+  SerialBT.print("CLOSED DOOR");     /* Send message via Bluetooth to indicate door is closed */
 }
+
 
 /*
  * @name: handleNewPasswordInput
