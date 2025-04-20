@@ -675,6 +675,47 @@ long readDistance(int triggerPin, int echoPin) {
   return distance; /* Return the measured distance in centimeters */
 }
 
+/*
+ * @name: AutoModeDoor
+ * -------------------
+ * @brief: This function automatically controls the door based on the distance measured
+ *         by two ultrasonic sensors. If a person is detected within a certain range, the
+ *         door opens. If no one is detected, the door closes.
+ */
+void AutoModeDoor(void) {
+  long distance1 = readDistance(ULTRASONIC1_TRIGGER_PIN, ULTRASONIC1_ECHO_PIN);  /* Read distance from Sensor 1 */
+  long distance2 = readDistance(ULTRASONIC2_TRIGGER_PIN, ULTRASONIC2_ECHO_PIN);  /* Read distance from Sensor 2 */
+
+  Serial.print("Sensor 1: ");                   /* Print label for Sensor 1 distance */
+  if (distance1 == -1)                          /* Check if Sensor 1 is out of range */
+    Serial.print("Out of range");               /* Print out-of-range message for Sensor 1 */
+  else
+    Serial.print(distance1);                    /* Print valid distance for Sensor 1 */
+
+  Serial.print(" cm | Sensor 2: ");             /* Print separator and label for Sensor 2 */
+  if (distance2 == -1)                          /* Check if Sensor 2 is out of range */
+    Serial.println("Out of range");             /* Print out-of-range message for Sensor 2 */
+  else
+    Serial.println(distance2);                  /* Print valid distance for Sensor 2 */
+
+  /* Check condition to open door: person detected */
+  if ((distance1 > 0 && distance1 < 12) || (distance2 > 0 && distance2 < 12)) {
+    if (!isOpenDoor) {                          /* If the door is currently closed */
+      Serial.println("Mo cua");                 /* Print message to indicate door is opening */
+      OpenDoor();                               /* Call function to open the door */
+    }
+  }
+  /* Check condition to close door: no person detected */
+  else {
+    if (isOpenDoor) {                           /* If the door is currently open */
+      Serial.println("Dong cua");               /* Print message to indicate door is closing */
+      CloseDoor();                              /* Call function to close the door */
+    }
+  }
+}
+
+
+
 /*******************************************************************************
  * EOF
  ******************************************************************************/
