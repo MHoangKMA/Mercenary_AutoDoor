@@ -39,10 +39,10 @@
 #define PULSE_RANGE_END 2500
 
 /* Define the starting angle of the servo (0 degrees) */
-#define ANGLE_START 0
+#define ANGLE_START -40
 
 /* Define the angle for the end position of the servo (-45 degrees) */
-#define ANGLE_START_END -45
+#define ANGLE_START_END 5
 
 /* Define the maximum number of password attempts */
 #define MAX_ATTEMPTS 5
@@ -55,6 +55,16 @@
 
 /* Define the number of milliseconds in a second */
 #define MS_IN_A_SECOND 1000
+
+/* Define GPIO pins for Ultrasonic Sensor 1 */
+#define ULTRASONIC1_TRIGGER_PIN 18 /* Trigger pin for Ultrasonic Sensor 1 */
+
+#define ULTRASONIC1_ECHO_PIN 23 /* Echo pin for Ultrasonic Sensor 1 */
+
+/* Define GPIO pins for Ultrasonic Sensor 2 */
+#define ULTRASONIC2_TRIGGER_PIN 4 /* Trigger pin for Ultrasonic Sensor 2 */
+
+#define ULTRASONIC2_ECHO_PIN 2 /* Echo pin for Ultrasonic Sensor 2 */
 
 /*******************************************************************************
  * Variables
@@ -81,15 +91,14 @@ const int ledPin1 = 4;  /* Pin assigned to LED 1 */
 const int ledPin2 = 2;  /* Pin assigned to LED 2 */
 const int ledPin3 = 15; /* Pin assigned to LED 3 */
 
-char keys[ROWS][COLS] = { /* Defines the key mappings for the keypad */
-                          { '1', '2', '3', 'A' },
-                          { '4', '5', '6', 'B' },
-                          { '7', '8', '9', 'C' },
-                          { '*', '0', '#', 'D' }
-};
+char keys[ROWS][COLS] = {/* Defines the key mappings for the keypad */
+                         {'1', '2', '3', 'A'},
+                         {'4', '5', '6', 'B'},
+                         {'7', '8', '9', 'C'},
+                         {'*', '0', '#', 'D'}};
 
-byte rowPins[ROWS] = { 27, 14, 12, 13 }; /* GPIO pins connected to the keypad rows */
-byte colPins[COLS] = { 26, 25, 33, 32 }; /* GPIO pins connected to the keypad columns */
+byte rowPins[ROWS] = {27, 14, 12, 13}; /* GPIO pins connected to the keypad rows */
+byte colPins[COLS] = {26, 25, 33, 32}; /* GPIO pins connected to the keypad columns */
 
 /* Creates a Keypad object with the defined mappings and pins */
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
@@ -100,7 +109,8 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
  * @brief: Init System
  */
 
-void setup() {
+void setup()
+{
   SerialBT.begin("Auto Door Bluetooth");                         /* Initializes Bluetooth with the device name "Auto Door Bluetooth" */
   Serial.begin(115200);                                          /* Sets up serial communication at a baud rate of 115200 */
   myServo.setPeriodHertz(PWM_FREQUENCY);                         /* Increases PWM frequency to 60Hz for better signal */
@@ -118,11 +128,17 @@ void setup() {
   digitalWrite(ledPin2, LOW); /* Turns off LED 2 */
   digitalWrite(ledPin3, LOW); /* Turns off LED 3 */
 
-  if (isPasswordStored()) {
+  pinMode(ULTRASONIC2_TRIGGER_PIN, OUTPUT); /* Set Sensor 2 trigger pin as output */
+  pinMode(ULTRASONIC2_ECHO_PIN, INPUT);     /* Set Sensor 2 echo pin as input */
+
+  if (isPasswordStored())
+  {
     lcd.setCursor(0, 0);      /* Sets the cursor to the first row, first column */
     lcd.print("Input Pass:"); /* Prompts the user to input the password */
     checkPassword();          /* Calls the function to verify the password */
-  } else {
+  }
+  else
+  {
     lcd.setCursor(0, 0);           /* Sets the cursor to the first row, first column */
     lcd.print("Input New Pass:");  /* Prompts the user to set a new password */
     lcd.setCursor(0, 1);           /* Sets the cursor to the second row, first column */
@@ -136,10 +152,13 @@ void setup() {
  * @brief: Lock Door through App on Mobile Phone via BLE
  */
 
-void LockByApp() {
-  if (SerialBT.available()) {
+void LockByApp()
+{
+  if (SerialBT.available())
+  {
     String DataBLE = ""; /* Initialize an empty string to store the data received from the Bluetooth app */
-    while (SerialBT.available()) {
+    while (SerialBT.available())
+    {
       char characterBLE = SerialBT.read(); /* Read each character from Bluetooth */
       DataBLE += characterBLE;             /* Append the character to the string */
     }
@@ -148,7 +167,8 @@ void LockByApp() {
     Serial.println(DataBLE);           /* Print the data received from the app */
 
     /* Check if the received command is "*" */
-    if (DataBLE.equals("*")) {
+    if (DataBLE.equals("*"))
+    {
       lcd.clear();                 /* Clear the LCD screen */
       lcd.setCursor(0, 0);         /* Set the cursor to the first row, first column */
       lcd.print("App Close Door"); /* Display a message indicating the door is closing */
@@ -169,12 +189,14 @@ void LockByApp() {
  * @brief: A Loop run all action on program
  */
 
-void loop() {
+void loop()
+{
   LockByApp();                /* Check if a command is received from the app to lock/unlock the door */
   char key = keypad.getKey(); /* Get the key pressed on the keypad */
 
   /* If the "#" key is pressed */
-  if (key == '#') {
+  if (key == '#')
+  {
     if (isPasswordStored()) /* Check if a password is already stored */
     {
       if (isOpenDoor) /* If the door is open */
@@ -191,7 +213,8 @@ void loop() {
   }
 
   /* If the "*" key is pressed */
-  if (key == '*') {
+  if (key == '*')
+  {
     if (isPasswordStored()) /* Check if a password is stored */
     {
       if (isOpenDoor) /* If the door is open */
@@ -211,7 +234,8 @@ void loop() {
   }
 
   /* If no password is stored yet, handle new password input */
-  if (!isPasswordStored()) {
+  if (!isPasswordStored())
+  {
     handleNewPasswordInput(key); /* Handle the input for setting a new password */
   }
 }
@@ -223,7 +247,8 @@ void loop() {
  * The servo motor is rotated from 0° to the defined ANGLE_SERVO_OPEN to fully open the door.
  * Additionally, it turns on the appropriate LED to indicate the door status and updates the Bluetooth app with a status message.
  */
-void OpenDoor() {
+void OpenDoor()
+{
   int angle;         /* Variable to store the servo motor angle */
   isOpenDoor = true; /* Set the flag indicating the door is open */
 
@@ -233,7 +258,8 @@ void OpenDoor() {
   digitalWrite(ledPin3, HIGH);
 
   /* Rotate the servo motor from 0° to ANGLE_SERVO_OPEN */
-  for (angle = ANGLE_START; angle <= ANGLE_SERVO_OPEN; angle++) {
+  for (angle = ANGLE_START; angle <= ANGLE_SERVO_OPEN; angle++)
+  {
     myServo.write(angle); /* Set the servo angle */
     delay(5);             /* Delay to allow the servo to move smoothly */
   }
@@ -248,7 +274,8 @@ void OpenDoor() {
  * The servo motor is rotated from the defined ANGLE_SERVO_CLOSE to -45° to fully close the door.
  * Additionally, it updates the LED status to indicate the door is closed and sends a message to the Bluetooth app.
  */
-void CloseDoor() {
+void CloseDoor()
+{
   int angle;          /* Variable to store the servo motor angle */
   isOpenDoor = false; /* Set the flag indicating the door is closed */
 
@@ -258,7 +285,8 @@ void CloseDoor() {
   digitalWrite(ledPin3, LOW);
 
   /* Rotate the servo motor from ANGLE_SERVO_CLOSE to -45° */
-  for (angle = ANGLE_SERVO_CLOSE; angle >= ANGLE_START_END; angle--) {
+  for (angle = ANGLE_SERVO_CLOSE; angle >= ANGLE_START_END; angle--)
+  {
     myServo.write(angle); /* Set the servo angle */
     delay(5);             /* Delay to allow the servo to move smoothly */
   }
@@ -273,15 +301,19 @@ void CloseDoor() {
  * appends it to the password array, and displays it on the LCD screen. The entered password is saved to EEPROM once
  * the defined length is reached. If an invalid key is pressed, it displays an error message on the LCD and blinks an LED.
  */
-void handleNewPasswordInput(char key) {
+void handleNewPasswordInput(char key)
+{
   /* Check if no key was pressed */
-  if (key == NO_KEY) {
+  if (key == NO_KEY)
+  {
     return; /* Exit the function if no key is pressed */
   }
 
   /* Check if the pressed key is valid (number or letter) */
-  if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z')) {
-    if (passwordIndex < PASSWORD_LENGTH) {
+  if ((key >= '0' && key <= '9') || (key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z'))
+  {
+    if (passwordIndex < PASSWORD_LENGTH)
+    {
       /* Turn on LED to indicate password entry is in progress */
       digitalWrite(ledPin1, LOW);
       digitalWrite(ledPin2, HIGH);
@@ -302,7 +334,8 @@ void handleNewPasswordInput(char key) {
     }
 
     /* If the password length is reached, save it to EEPROM */
-    if (passwordIndex == PASSWORD_LENGTH) {
+    if (passwordIndex == PASSWORD_LENGTH)
+    {
       password[PASSWORD_LENGTH] = '\0'; /* Null-terminate the password string */
       savePasswordToEEPROM(password);   /* Save the password to EEPROM */
 
@@ -317,7 +350,9 @@ void handleNewPasswordInput(char key) {
       delay(2000);
       ESP.restart(); /* Restart the system to apply the new password */
     }
-  } else {
+  }
+  else
+  {
     /* Display an error message if the entered key is invalid */
     lcd.setCursor(0, 1);
     lcd.print("Invalid Key!");
@@ -336,9 +371,11 @@ void handleNewPasswordInput(char key) {
  * @brief: This function saves the entered password to the EEPROM memory. It loops through the password characters
  * and writes each one to the EEPROM. After saving the password, it stores a flag to indicate that a password has been set.
  */
-void savePasswordToEEPROM(char *password) {
+void savePasswordToEEPROM(char *password)
+{
   /* Loop through each character in the password and save it to EEPROM */
-  for (byte i = 0; i < PASSWORD_LENGTH; i++) {
+  for (byte i = 0; i < PASSWORD_LENGTH; i++)
+  {
     EEPROM.write(i, password[i]);
   }
 
@@ -353,7 +390,8 @@ void savePasswordToEEPROM(char *password) {
  * @brief: This function checks if a password has been stored in EEPROM. It reads the flag from the EEPROM and compares it
  * with the predefined PASSWORD_FLAG. If the flag matches, it returns true, indicating that a password has been saved.
  */
-bool isPasswordStored() {
+bool isPasswordStored()
+{
   /* Read the flag from EEPROM to check if a password is stored */
   byte flag = EEPROM.read(FLAG_ADDRESS);
 
@@ -367,12 +405,14 @@ bool isPasswordStored() {
  * @brief: This function resets the stored password by clearing the password data from EEPROM. It sets the password flag to 0xFF
  * to indicate that no password is stored. After clearing the data, it commits the changes to the EEPROM.
  */
-void resetPassword() {
+void resetPassword()
+{
   /* Reset the password index */
   passwordIndex = 0;
 
   /* Clear the stored password data from EEPROM */
-  for (byte i = 0; i < PASSWORD_LENGTH; i++) {
+  for (byte i = 0; i < PASSWORD_LENGTH; i++)
+  {
     EEPROM.write(i, 0xFF);
   }
 
@@ -389,7 +429,8 @@ void resetPassword() {
  * If the user exceeds the allowed number of attempts, the system will be locked for 10 minutes.
  * Password can be entered via both keypad and Bluetooth. If the correct password is entered, the door will open.
  */
-void checkPassword() {
+void checkPassword()
+{
   /* Define the maximum number of attempts and lock time in milliseconds */
   const byte maxAttempts = MAX_ATTEMPTS;
   const unsigned long lockTimeMs = LOCK_TIME_MS; /* Lock time of 10 minutes in milliseconds */
@@ -397,27 +438,33 @@ void checkPassword() {
   byte inputIndex = 0;
 
   /* Infinite loop to keep checking password input */
-  while (true) {
+  while (true)
+  {
     /* Continue attempting to enter the password if there are remaining attempts */
-    while (attempts > 0) {
+    while (attempts > 0)
+    {
       char key = '\0';
 
       /* Check data from the keypad */
       char keypadKey = keypad.getKey();
-      if (keypadKey) {
+      if (keypadKey)
+      {
         key = keypadKey;
       }
 
       /* Check data from Bluetooth */
-      if (SerialBT.available()) {
+      if (SerialBT.available())
+      {
         String bluetoothData = "";
-        while (SerialBT.available()) {
+        while (SerialBT.available())
+        {
           char bluetoothChar = SerialBT.read();
           bluetoothData += bluetoothChar;
         }
 
         /* Process Bluetooth password if fully received */
-        if (bluetoothData.length() == PASSWORD_LENGTH) {
+        if (bluetoothData.length() == PASSWORD_LENGTH)
+        {
           bluetoothData.toCharArray(inputPassword, PASSWORD_LENGTH + 1);
           if (comparePasswords(inputPassword)) /* Check if the entered password is correct */
           {
@@ -430,7 +477,9 @@ void checkPassword() {
             lcd.setCursor(0, 0);
             lcd.print("Open Door!");
             return;
-          } else {
+          }
+          else
+          {
             /* Decrease attempts left and update display */
             attempts--;
             lcd.setCursor(0, 1);
@@ -449,9 +498,11 @@ void checkPassword() {
       }
 
       /* Process key input from the keypad */
-      if (key) {
+      if (key)
+      {
         /* Add key to input password */
-        if (inputIndex < PASSWORD_LENGTH) {
+        if (inputIndex < PASSWORD_LENGTH)
+        {
           inputPassword[inputIndex] = key;
           lcd.setCursor(inputIndex, 1);
           lcd.print(key);
@@ -463,7 +514,8 @@ void checkPassword() {
         }
 
         /* Check if the input password is fully entered */
-        if (inputIndex == PASSWORD_LENGTH) {
+        if (inputIndex == PASSWORD_LENGTH)
+        {
           inputPassword[PASSWORD_LENGTH] = '\0'; /* Null-terminate the password string */
 
           if (comparePasswords(inputPassword)) /* Check if password is correct */
@@ -477,7 +529,9 @@ void checkPassword() {
             lcd.setCursor(0, 0);
             lcd.print("Open Door!");
             return;
-          } else {
+          }
+          else
+          {
             /* Decrease attempts left and update display */
             attempts--;
             lcd.setCursor(0, 1);
@@ -502,7 +556,8 @@ void checkPassword() {
     unsigned long lockStart = millis(); /* Record the time when the lock starts */
 
     /* Wait for the lock period to pass (10 minutes) */
-    while (millis() - lockStart < LOCK_TIME_MS) {
+    while (millis() - lockStart < LOCK_TIME_MS)
+    {
       unsigned long remainingTime = LOCK_TIME_MS - (millis() - lockStart); /* Calculate remaining time */
       int minutes = remainingTime / MS_IN_A_MINUTE;                        /* Convert to minutes */
       int seconds = (remainingTime % MS_IN_A_MINUTE) / MS_IN_A_SECOND;     /* Convert to seconds */
@@ -540,11 +595,14 @@ void checkPassword() {
  * @brief: This function checks if the entered password matches the password stored in EEPROM.
  * If all characters match, the function returns true. Otherwise, it returns false.
  */
-bool comparePasswords(char *input) {
+bool comparePasswords(char *input)
+{
   /* Loop through each character of the input password and compare it with the stored password in EEPROM */
-  for (byte i = 0; i < PASSWORD_LENGTH; i++) {
+  for (byte i = 0; i < PASSWORD_LENGTH; i++)
+  {
     /* If any character doesn't match, return false */
-    if (EEPROM.read(i) != input[i]) {
+    if (EEPROM.read(i) != input[i])
+    {
       return false;
     }
   }
@@ -559,9 +617,11 @@ bool comparePasswords(char *input) {
  * @brief: This function activates the buzzer for 3 short beeps.
  * It turns the buzzer on and off with a delay of 100ms for each beep.
  */
-void buzzerOn() {
+void buzzerOn()
+{
   /* Repeat 3 times to create 3 beeps */
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3; i++)
+  {
     /* Turn the buzzer on */
     digitalWrite(buzzerPin, HIGH);
     delay(100); /* Wait for 100ms */
@@ -577,10 +637,44 @@ void buzzerOn() {
  * ----------------------------
  * @brief: This function turns off the buzzer by setting its pin to LOW.
  */
-void buzzerOff() {
+void buzzerOff()
+{
   /* Turn off the buzzer */
   digitalWrite(buzzerPin, LOW);
 }
+
+/*
+ * @name: readDistance
+ * -------------------
+ * @brief: This function measures the distance using an SRF04 ultrasonic sensor.
+ * It sends a 10us pulse from the trigger pin and waits for the echo signal.
+ * The time taken is used to calculate the distance in centimeters.
+ *
+ * @param triggerPin: GPIO pin used to send the ultrasonic pulse
+ * @param echoPin: GPIO pin used to receive the echo pulse
+ *
+ * @return: Distance in centimeters, or -1 if the sensor is out of range.
+ */
+long readDistance(int triggerPin, int echoPin) {
+  long duration; /* Variable to store pulse duration in microseconds */
+
+  digitalWrite(triggerPin, LOW);  /* Ensure trigger is LOW before sending pulse */
+  delayMicroseconds(2);           /* Wait briefly before sending the pulse */
+  digitalWrite(triggerPin, HIGH); /* Set trigger HIGH to start the pulse */
+  delayMicroseconds(10);          /* Keep HIGH for 10 microseconds */
+  digitalWrite(triggerPin, LOW);  /* Set trigger LOW to end the pulse */
+
+  duration = pulseIn(echoPin, HIGH, 30000); /* Read echo duration, timeout after 30ms (max ~5m) */
+
+  static long distance = duration / 58; /* Convert time to distance (microseconds to cm) */
+
+  if (distance == 0 || distance > 500) { /* If distance is invalid or too far */
+    return -1;                           /* Return -1 to indicate out of range */
+  }
+
+  return distance; /* Return the measured distance in centimeters */
+}
+
 /*******************************************************************************
  * EOF
  ******************************************************************************/
