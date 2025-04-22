@@ -329,9 +329,9 @@ void handleNewPasswordInput(char key)
     /* Display an error message if the entered key is invalid */
     lcd.setCursor(0, 1);
     lcd.print("Invalid Key!");
-    digitalWrite(ledPin1, HIGH); /* Blink the LED to indicate error */
+    digitalWrite(ledPin3, HIGH); /* Blink the LED to indicate error */
     delay(100);                  /* Wait 1 second */
-    digitalWrite(ledPin1, LOW);  /* Turn off the LED */
+    digitalWrite(ledPin3, LOW);  /* Turn off the LED */
     delay(100);                  /* Wait 1 second */
     delay(500);
     lcd.clear();
