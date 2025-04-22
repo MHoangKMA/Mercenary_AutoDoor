@@ -77,8 +77,6 @@ const int buzzerPin = 5; /* Pin assigned to the buzzer */
 const byte ROWS = 4; /* Number of rows in the keypad */
 const byte COLS = 4; /* Number of columns in the keypad */
 
-const int ledPin1 = 4;  /* Pin assigned to LED 1 */
-const int ledPin2 = 2;  /* Pin assigned to LED 2 */
 const int ledPin3 = 15; /* Pin assigned to LED 3 */
 
 char keys[ROWS][COLS] = { /* Defines the key mappings for the keypad */
@@ -110,12 +108,8 @@ void setup() {
   lcd.backlight();                                               /* Turns on the LCD backlight */
 
   pinMode(buzzerPin, OUTPUT); /* Sets the buzzer pin as an output */
-  pinMode(ledPin1, OUTPUT);   /* Sets LED 1 pin as an output */
-  pinMode(ledPin2, OUTPUT);   /* Sets LED 2 pin as an output */
   pinMode(ledPin3, OUTPUT);   /* Sets LED 3 pin as an output */
 
-  digitalWrite(ledPin1, LOW); /* Turns off LED 1 */
-  digitalWrite(ledPin2, LOW); /* Turns off LED 2 */
   digitalWrite(ledPin3, LOW); /* Turns off LED 3 */
 
   if (isPasswordStored()) {
@@ -227,8 +221,6 @@ void OpenDoor() {
   int angle;                         /* Declare a variable to hold the current servo angle */
   isOpenDoor = true;                 /* Set the flag to indicate that the door is open */
 
-  digitalWrite(ledPin1, LOW);        /* Turn off LED1 (possibly idle indicator) */
-  digitalWrite(ledPin2, LOW);        /* Turn off LED2 (possibly closed indicator) */
   digitalWrite(ledPin3, HIGH);       /* Turn on LED3 to indicate the door is open */
 
   for (angle = ANGLE_SERVO_CLOSE; angle >= ANGLE_START_END; angle--) {  /* Loop from close angle to open angle */
@@ -250,8 +242,6 @@ void CloseDoor() {
   int angle;                          /* Declare a variable to hold the current servo angle */
   isOpenDoor = false;                /* Set the flag to indicate that the door is closed */
 
-  digitalWrite(ledPin2, HIGH);       /* Turn on LED2 to indicate the door is closed */
-  digitalWrite(ledPin1, LOW);        /* Turn off LED1 (possibly idle indicator) */
   digitalWrite(ledPin3, LOW);        /* Turn off LED3 (open indicator) */
 
   for (angle = ANGLE_START; angle <= ANGLE_SERVO_OPEN; angle++) {  /* Loop from open angle to close angle */
@@ -316,9 +306,9 @@ void handleNewPasswordInput(char key) {
     /* Display an error message if the entered key is invalid */
     lcd.setCursor(0, 1);
     lcd.print("Invalid Key!");
-    digitalWrite(ledPin1, HIGH); /* Blink the LED to indicate error */
+    digitalWrite(ledPin3, HIGH); /* Blink the LED to indicate error */
     delay(100);                  /* Wait 1 second */
-    digitalWrite(ledPin1, LOW);  /* Turn off the LED */
+    digitalWrite(ledPin3, LOW);  /* Turn off the LED */
     delay(100);                  /* Wait 1 second */
     delay(500);
     lcd.clear();
@@ -512,11 +502,9 @@ void checkPassword() {
       lcd.print(" ");
 
       /* Flash LEDs to indicate locked status */
-      digitalWrite(ledPin2, LOW);  /* Turn off LED 2 */
-      digitalWrite(ledPin3, LOW);  /* Turn off LED 3 */
-      digitalWrite(ledPin1, HIGH); /* Turn on LED 1 */
+      digitalWrite(ledPin3, HIGH); /* Turn on LED 3 */
       delay(100);                  /* Wait for 100 ms */
-      digitalWrite(ledPin1, LOW);  /* Turn off LED 1 */
+      digitalWrite(ledPin3, LOW);  /* Turn off LED 3 */
       delay(200);                  /* Wait for 200 ms */
     }
 
