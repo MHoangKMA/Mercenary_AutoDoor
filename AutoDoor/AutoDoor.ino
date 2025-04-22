@@ -39,7 +39,7 @@
 #define PULSE_RANGE_END 2500
 
 /* Define the starting angle of the servo (0 degrees) */
-#define ANGLE_START -40
+#define ANGLE_START -50
 
 /* Define the angle for the end position of the servo (-45 degrees) */
 #define ANGLE_START_END 5
