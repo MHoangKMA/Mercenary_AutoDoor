@@ -39,7 +39,7 @@
 #define PULSE_RANGE_END 2500
 
 /* Define the starting angle of the servo (0 degrees) */
-#define ANGLE_SERVO_CLOSE_DOOR_START -50
+#define ANGLE_SERVO_CLOSE_DOOR_START 0
 
 /* Define the angle for the end position of the servo */
 #define ANGLE_START_OPEN_DOOR_END 5
