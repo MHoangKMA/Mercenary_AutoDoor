@@ -66,10 +66,21 @@
 
 #define ULTRASONIC2_ECHO_PIN 2 /* Echo pin for Ultrasonic Sensor 2 */
 
-#define DISTANCE_THRESHOLD_MAX 12
+#define DISTANCE_THRESHOLD_MAX 12 /* Maximum distance in cm to detect a person (for door to open) */
 
-#define DISTANCE_THRESHOLD_MIN 0
+#define DISTANCE_THRESHOLD_MIN 0 /* Minimum valid distance in cm to filter out noise or invalid readings */
 
+#define TIMEOUT_DURATION 30000 /* Timeout duration for pulseIn() in microseconds (30ms) */
+
+#define SPEED_OF_SOUND 0.034 /* Speed of sound in cm per microsecond (used for distance calculation) */
+
+#define DOUBLE_DISTANCE 2 /* Divider used to calculate one-way distance (round-trip divided by 2) */
+
+#define BAUDRATE 115200 /* Baudrate transmiter */
+
+#define ROW_LCD 2 /* Row of LCD*/
+
+#define COLUMN_LCD 16 /* Column of LCD*/
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -84,7 +95,7 @@ Servo myServo;            /* Object to control the servo motor */
 BluetoothSerial SerialBT; /* Object for Bluetooth serial communication */
 
 /* Configuration for the I2C LCD */
-LiquidCrystal_I2C lcd(0x27, 16, 2); /* LCD with I2C address 0x27, 16 columns, and 2 rows */
+LiquidCrystal_I2C lcd(0x27, COLUMN_LCD, ROW_LCD); /* LCD with I2C address 0x27, 16 columns, and 2 rows */
 
 const int buzzerPin = 5; /* Pin assigned to the buzzer */
 
@@ -115,7 +126,9 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 void setup() {
   SerialBT.begin("Auto Door Bluetooth");                         /* Initializes Bluetooth with the device name "Auto Door Bluetooth" */
-  Serial.begin(115200);                                          /* Sets up serial communication at a baud rate of 115200 */
+  
+  Serial.begin(BAUDRATE);                                          /* Sets up serial communication at a baud rate of 115200 */
+  
   myServo.setPeriodHertz(PWM_FREQUENCY);                         /* Increases PWM frequency to 60Hz for better signal */
   myServo.attach(SERVO_PIN, PULSE_RANGE_START, PULSE_RANGE_END); /* Attaches the servo to pin 18 with pulse range 500-2500 microseconds */
 
@@ -202,13 +215,13 @@ long readDistance(int triggerPin, int echoPin) {
   digitalWrite(triggerPin, LOW); /* Set the trigger pin LOW again */
 
   /* Measure the duration of the HIGH pulse on the echo pin */
-  long duration = pulseIn(echoPin, HIGH, 30000); /* Timeout after 30ms if no echo */
+  long duration = pulseIn(echoPin, HIGH, TIMEOUT_DURATION); /* Timeout after 30ms if no echo */
 
   /* If no pulse is received, return -1 to indicate an error */
   if (duration == 0) return -1;
 
   /* Calculate distance in centimeters: (duration * speed of sound (cm/us)) / 2 */
-  long distance = duration * 0.034 / 2;
+  long distance = duration * SPEED_OF_SOUND / DOUBLE_DISTANCE;
 
   /* Return the calculated distance */
   return distance;
@@ -227,9 +240,7 @@ void loop() {
   /* If no password is stored yet, handle new password input */
   if (!isPasswordStored()) {
     handleNewPasswordInput(key); /* Handle the input for setting a new password */
-
   } else {
-
     if (key == 'B') {
       /* Check if a password has been stored */
       if (isPasswordStored()) {
@@ -240,7 +251,7 @@ void loop() {
           lcd.setCursor(0, 0);     /* Set cursor to the beginning of the first line */
           CloseDoor();             /* Call function to close the door */
           lcd.print("Close Door"); /* Display "Close Door" message */
-          delay(2000);             /* Wait for 2 seconds */
+          delay(1500);             /* Wait for 2 seconds */
           isOpenDoor = false;      /* Update the flag to indicate the door is now closed */
         }
 
@@ -248,13 +259,13 @@ void loop() {
         lcd.clear();                /* Clear the LCD display */
         lcd.setCursor(0, 0);        /* Set cursor to the beginning of the first line */
         lcd.print("Switch Manual"); /* Display message indicating mode switch */
-        delay(2000);                /* Wait for 2 seconds */
+        delay(1500);                /* Wait for 2 seconds */
         isManualMode = true;        /* Enable manual mode by setting flag */
 
         lcd.clear();              /* Clear the LCD display */
         lcd.setCursor(0, 0);      /* Set cursor to the beginning of the first line */
         lcd.print("Manual Mode"); /* Display "Manual Mode" message */
-        delay(2000);              /* Wait for 2 seconds */
+        delay(1500);              /* Wait for 2 seconds */
 
         lcd.clear();              /* Clear the LCD display */
         lcd.setCursor(0, 0);      /* Set cursor to the beginning of the first line */
@@ -262,8 +273,6 @@ void loop() {
         checkPassword();          /* Call function to verify password */
       }
     }
-
-
 
     if (isManualMode == true) {
       /* If the "#" key is pressed */
@@ -302,7 +311,6 @@ void loop() {
           }
         }
       }
-
 
       /* If the "*" key is pressed */
       if (key == 'A') {
@@ -358,7 +366,6 @@ void loop() {
           CloseDoor();    /* Call function to close the door */
         }
       }
-
       delay(500); /* Delay for sensor stability and to avoid rapid switching */
     }
   }
